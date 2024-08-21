@@ -83,7 +83,7 @@ spec:
 
     post {
         always {
-            node {
+            container('docker') {
                 cleanWs()
             }
         }
