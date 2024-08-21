@@ -1,24 +1,13 @@
 def label = 'aun'  // ใช้ชื่อ Label ที่ถูกต้อง
 
-podTemplate(
-    label: label,
-    containers: [
-        containerTemplate(
-            name: 'docker',
-            image: 'docker:19.03.12',  // ใช้ Docker image ที่ต้องการ
-            command: 'cat',
-            ttyEnabled: true,
-            volumeMounts: [
-                // Mount Docker socket for Docker operations
-                volumeMount(mountPath: '/var/run/docker.sock', name: 'docker-socket')
-            ]
-        )
-    ],
-    volumes: [
-        hostPathVolume(mountPath: '/var/run/docker.sock', hostPath: '/var/run/docker.sock', name: 'docker-socket')
-    ]
-) {
-    node(label) {
+podTemplate(label: label, containers: [
+  containerTemplate(name: 'docker', image: 'docker', command: 'cat', ttyEnabled: true),
+],
+volumes: [
+  hostPathVolume(mountPath: '/var/run/docker.sock', hostPath: '/var/run/docker.sock')
+]) {
+
+node(label) {
         def projectId = 'prismatic-crow-429903-r1'
         def region = 'asia-southeast1'
         def repoName = 'devops'
