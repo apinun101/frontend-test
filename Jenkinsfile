@@ -1,4 +1,4 @@
-def label = 'auntoto'  // ใช้ชื่อ Label ที่ถูกต้อง
+def label = 'aun'  // ใช้ชื่อ Label ที่ถูกต้อง
 
 podTemplate(
     label: label,
@@ -15,7 +15,7 @@ podTemplate(
         )
     ],
     volumes: [
-        hostPathVolume(mountPath: '/var/run/docker.sock', hostPath: '/var/run/docker.sock')
+        hostPathVolume(mountPath: '/var/run/docker.sock', hostPath: '/var/run/docker.sock', name: 'docker-socket')
     ]
 ) {
     node(label) {
