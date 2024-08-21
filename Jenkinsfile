@@ -1,5 +1,40 @@
 pipeline {
-    agent any
+    agent {
+        kubernetes {
+            // Define the Pod Template using Kubernetes plugin
+            label 'docker-agent'
+            customWorkspace '/home/jenkins/agent'
+            podTemplate(
+                label: 'docker-agent',
+                containers: [
+                    containerTemplate(
+                        name: 'docker',
+                        image: 'docker:19.03.12', // Use a Docker image with Docker CLI
+                        command: 'cat',
+                        ttyEnabled: true,
+                        volumeMounts: [
+                            // Mount Docker socket to allow Docker commands
+                            mountPath: '/var/run/docker.sock',
+                            name: 'docker-socket'
+                        ]
+                    ),
+                    containerTemplate(
+                        name: 'jnlp',
+                        image: 'jenkins/inbound-agent:latest',
+                        args: '${computer.jnlpmac} ${computer.name}',
+                        resourceRequestCpu: '100m',
+                        resourceRequestMemory: '256Mi'
+                    )
+                ],
+                volumes: [
+                    hostPathVolume(
+                        mountPath: '/var/run/docker.sock',
+                        hostPath: '/var/run/docker.sock'
+                    )
+                ]
+            )
+        }
+    }
 
     environment {
         PROJECT_ID = 'prismatic-crow-429903-r1'
@@ -8,15 +43,6 @@ pipeline {
         IMAGE_NAME = 'my-nextjs-app'
         IMAGE_TAG = 'latest'
     }
-
-podTemplate(label: label, containers: [
-  containerTemplate(name: 'docker', image: 'docker', command: 'cat', ttyEnabled: true),
-],
-volumes: [
-  hostPathVolume(mountPath: '/var/run/docker.sock', hostPath: '/var/run/docker.sock')
-]) {
-
-node(label) {
   
     stages {
         stage('Checkout') {
@@ -64,5 +90,4 @@ node(label) {
         }
     }
 }
-}
-}
+
