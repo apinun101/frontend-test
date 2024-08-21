@@ -1,38 +1,33 @@
 pipeline {
     agent {
         kubernetes {
-            // Define the Pod Template using Kubernetes plugin
             label 'docker-agent'
             customWorkspace '/home/jenkins/agent'
-            podTemplate(
-                label: 'docker-agent',
-                containers: [
-                    containerTemplate(
-                        name: 'docker',
-                        image: 'docker:19.03.12', // Use a Docker image with Docker CLI
-                        command: 'cat',
-                        ttyEnabled: true,
-                        volumeMounts: [
-                            // Mount Docker socket to allow Docker commands
-                            mountPath: '/var/run/docker.sock',
-                            name: 'docker-socket'
-                        ]
-                    ),
-                    containerTemplate(
-                        name: 'jnlp',
-                        image: 'jenkins/inbound-agent:latest',
-                        args: '${computer.jnlpmac} ${computer.name}',
-                        resourceRequestCpu: '100m',
-                        resourceRequestMemory: '256Mi'
-                    )
-                ],
-                volumes: [
-                    hostPathVolume(
-                        mountPath: '/var/run/docker.sock',
-                        hostPath: '/var/run/docker.sock'
-                    )
-                ]
-            )
+            yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: docker
+    image: docker:19.03.12
+    command:
+    - cat
+    tty: true
+    volumeMounts:
+    - mountPath: /var/run/docker.sock
+      name: docker-socket
+  - name: jnlp
+    image: jenkins/inbound-agent:latest
+    args: \${computer.jnlpmac} \${computer.name}
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+  volumes:
+  - name: docker-socket
+    hostPath:
+      path: /var/run/docker.sock
+            """
         }
     }
 
@@ -53,7 +48,7 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                script {
+                container('docker') {
                     sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .'
                 }
             }
@@ -69,7 +64,7 @@ pipeline {
 
         stage('Tag Docker Image') {
             steps {
-                script {
+                container('docker') {
                     sh 'docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${IMAGE_NAME}:${IMAGE_TAG}'
                 }
             }
@@ -77,7 +72,7 @@ pipeline {
 
         stage('Push to Artifact Registry') {
             steps {
-                script {
+                container('docker') {
                     sh 'docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${IMAGE_NAME}:${IMAGE_TAG}'
                 }
             }
@@ -90,4 +85,3 @@ pipeline {
         }
     }
 }
-
