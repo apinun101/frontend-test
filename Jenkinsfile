@@ -1,7 +1,8 @@
 pipeline {
     agent {
         kubernetes {
-            label 'docker-agent'
+            // ใช้ inheritFrom เพื่อรับค่าจาก podTemplate ที่มีอยู่
+            inheritFrom 'docker-agent'
             customWorkspace '/home/jenkins/agent'
             yaml """
 apiVersion: v1
@@ -18,7 +19,9 @@ spec:
       name: docker-socket
   - name: jnlp
     image: jenkins/inbound-agent:latest
-    args: \${computer.jnlpmac} \${computer.name}
+    args:
+    - \${computer.jnlpmac}
+    - \${computer.name}
     resources:
       requests:
         cpu: 100m
