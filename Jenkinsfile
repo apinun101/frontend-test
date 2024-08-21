@@ -1,5 +1,10 @@
 pipeline {
-    agent any
+    agent {
+        kubernetes {
+            label 'docker-agent'
+            defaultContainer 'jnlp'
+        }
+    }
 
     environment {
         PROJECT_ID = 'prismatic-crow-429903-r1'
@@ -18,32 +23,40 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .'
+                container('docker') {
+                    script {
+                        sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .'
+                    }
                 }
             }
         }
 
         stage('Authenticate with Google Cloud') {
             steps {
-                withCredentials([file(credentialsId: 'gcp-service-account-key', variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
-                    sh 'gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS'
+                container('docker') {
+                    withCredentials([file(credentialsId: 'gcp-service-account-key', variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
+                        sh 'gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS'
+                    }
                 }
             }
         }
 
         stage('Tag Docker Image') {
             steps {
-                script {
-                    sh 'docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${IMAGE_NAME}:${IMAGE_TAG}'
+                container('docker') {
+                    script {
+                        sh 'docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${IMAGE_NAME}:${IMAGE_TAG}'
+                    }
                 }
             }
         }
 
         stage('Push to Artifact Registry') {
             steps {
-                script {
-                    sh 'docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${IMAGE_NAME}:${IMAGE_TAG}'
+                container('docker') {
+                    script {
+                        sh 'docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${IMAGE_NAME}:${IMAGE_TAG}'
+                    }
                 }
             }
         }
