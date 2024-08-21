@@ -1,7 +1,6 @@
 pipeline {
     agent {
         kubernetes {
-            // ใช้ inheritFrom เพื่อรับค่าจาก podTemplate ที่มีอยู่
             inheritFrom 'docker-agent'
             customWorkspace '/home/jenkins/agent'
             yaml """
@@ -36,7 +35,7 @@ spec:
 
     environment {
         PROJECT_ID = 'prismatic-crow-429903-r1'
-        REGION = 'asia-southeast1' // e.g., us-central1
+        REGION = 'asia-southeast1'
         REPO_NAME = 'devops'
         IMAGE_NAME = 'my-nextjs-app'
         IMAGE_TAG = 'latest'
@@ -84,7 +83,9 @@ spec:
 
     post {
         always {
-            cleanWs()
+            node {
+                cleanWs()
+            }
         }
     }
 }
