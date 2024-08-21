@@ -1,14 +1,5 @@
 pipeline {
     agent any
-}
-  podTemplate(label: label, containers: [
-  containerTemplate(name: 'docker', image: 'docker', command: 'cat', ttyEnabled: true),
-],
-volumes: [
-  hostPathVolume(mountPath: '/var/run/docker.sock', hostPath: '/var/run/docker.sock')
-]) {
-
-node(label) {
 
     environment {
         PROJECT_ID = 'prismatic-crow-429903-r1'
@@ -18,6 +9,15 @@ node(label) {
         IMAGE_TAG = 'latest'
     }
 
+podTemplate(label: label, containers: [
+  containerTemplate(name: 'docker', image: 'docker', command: 'cat', ttyEnabled: true),
+],
+volumes: [
+  hostPathVolume(mountPath: '/var/run/docker.sock', hostPath: '/var/run/docker.sock')
+]) {
+
+node(label) {
+  
     stages {
         stage('Checkout') {
             steps {
@@ -63,5 +63,6 @@ node(label) {
             cleanWs()
         }
     }
+}
 }
 }
