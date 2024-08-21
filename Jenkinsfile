@@ -1,51 +1,57 @@
-import groovy.json.JsonSlurperClassic
-def label = "worker-${UUID.randomUUID().toString()}"
-def commitSha1() {
-  sh 'git rev-parse HEAD > commitSha1'
-  def commit = readFile('commitSha1').trim()
-  sh 'rm commitSha1'
-  commit.substring(0, 11)
-}
-podTemplate(label: label, containers: [
-  containerTemplate(name: 'docker', image: 'docker', command: 'cat', ttyEnabled: true),
-],
-volumes: [
-  hostPathVolume(mountPath: '/var/run/docker.sock', hostPath: '/var/run/docker.sock')
-]) {
+pipeline {
+    agent any
 
-node(label) {
-
-  stage('Clone repository') {
-    checkout scm
-  } 
-
-    env.PROJECT_NAME = "frontend"
-    env.DOCKER_REGISTRY = "registry.gitlab.com"
-    env.REPO = "${env.DOCKER_REGISTRY}/dev/${env.PROJECT_NAME}"
-    env.IMAGE_NAME = "${env.REPO}"
-    env.COMMITSHA = commitSha1()
-    env.TAG_PREFIX = env.BRANCH_NAME
-    env.IMAGE_TAG = "${env.TAG_PREFIX}-${commitSha}"
-    env.APP_NAME = "test"
-    env.KUBE_CREDENTIAL_ID = "kubeconfig"
-    env.KUBE_NAMESPACE = "default"
-    env.APP_VALUES_FILE = "values-test-prod.yaml"
-  
-    stage('Build Image') {
-			container('docker') {
-        script {
-           dockerImage = docker.build("${env.IMAGE_NAME}:${env.IMAGE_TAG}", ".")
-        }
-			}
+    environment {
+        PROJECT_ID = 'prismatic-crow-429903-r1'
+        REGION = 'asia-southeast1' // e.g., us-central1
+        REPO_NAME = 'devops'
+        IMAGE_NAME = 'my-nextjs-app'
+        IMAGE_TAG = 'latest'
     }
-    // stage('Push Image') {
-		// 	container('docker') {
-    //     script {
-    //         docker.withRegistry("https://${env.DOCKER_REGISTRY}", "gitlab-deploy") {
-    //         dockerImage.push()
-    //         }
-    //     }
-    // 	}
-		// }
-  }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .'
+                }
+            }
+        }
+
+        stage('Authenticate with Google Cloud') {
+            steps {
+                withCredentials([file(credentialsId: 'gcp-service-account-key', variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
+                    sh 'gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS'
+                }
+            }
+        }
+
+        stage('Tag Docker Image') {
+            steps {
+                script {
+                    sh 'docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${IMAGE_NAME}:${IMAGE_TAG}'
+                }
+            }
+        }
+
+        stage('Push to Artifact Registry') {
+            steps {
+                script {
+                    sh 'docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${IMAGE_NAME}:${IMAGE_TAG}'
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+    }
 }
