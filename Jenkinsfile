@@ -10,7 +10,7 @@ volumes: [
     node(label) {
         def projectId = 'prismatic-crow-429903-r1'
         def region = 'asia-southeast1'
-        def repoName = 'devops'
+        def repoName = 'devops-repo'
         def imageName = 'my-nextjs-app'
         def imageTag = 'latest'
 
