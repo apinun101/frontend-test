@@ -14,8 +14,8 @@ volumes: [
         def repoName = 'devops-repo'
         def imageName = 'my-nextjs-app'
         def imageTag = 'latest'
-        def clusterName = 'your-gke-cluster-name'
-        def clusterLocation = 'your-cluster-location' // e.g., 'us-central1-a'
+        def clusterName = 'k8s-cluster01'
+        def clusterLocation = 'asia-southeast1' // e.g., 'us-central1-a'
 
         try {
             stage('Checkout') {
