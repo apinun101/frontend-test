@@ -30,6 +30,7 @@ volumes: [
                     withCredentials([file(credentialsId: 'gcp-service-account-key', variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
                         sh '''#!/bin/bash
                         gcloud auth activate-service-account --key-file="$GOOGLE_APPLICATION_CREDENTIALS"
+                        gcloud auth configure-docker asia-southeast1-docker.pkg.dev
                         '''
                     }
                 }
