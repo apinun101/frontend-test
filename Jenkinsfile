@@ -53,7 +53,7 @@ volumes: [
 
             stage('Deploy to GKE') {
                 container('kubectl') {
-                    withCredentials([file(credentialsId: 'gcp-service-account-key', variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
+                    withCredentials([file(credentialsId: 'gke-service-account-key', variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
                         sh '''#!/bin/bash
                         # Authenticate with Google Cloud
                         gcloud auth activate-service-account --key-file="$GOOGLE_APPLICATION_CREDENTIALS"
