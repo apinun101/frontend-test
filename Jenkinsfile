@@ -1,7 +1,7 @@
 def label = 'aun'  // ใช้ชื่อ Label ที่ถูกต้อง
 
 podTemplate(label: label, containers: [
-    containerTemplate(name: 'docker', image: 'docker', command: 'cat', ttyEnabled: true),
+    containerTemplate(name: 'docker', image: 'google/cloud-sdk:latest', command: 'cat', ttyEnabled: true),
 ],
 volumes: [
     hostPathVolume(mountPath: '/var/run/docker.sock', hostPath: '/var/run/docker.sock')
@@ -25,9 +25,8 @@ volumes: [
                 }
             }
 
-            // ใช้ docker image ของ Google Cloud SDK สำหรับการตรวจสอบสิทธิ์
-            docker.image('google/cloud-sdk:latest').inside {
-                stage('Authenticate with Google Cloud') {
+            stage('Authenticate with Google Cloud') {
+                container('docker') {
                     withCredentials([file(credentialsId: 'gcp-service-account-key', variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
                         sh '''#!/bin/bash
                         gcloud auth activate-service-account --key-file="$GOOGLE_APPLICATION_CREDENTIALS"
