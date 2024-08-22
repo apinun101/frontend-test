@@ -1,13 +1,13 @@
 def label = 'aun'  // ใช้ชื่อ Label ที่ถูกต้อง
 
 podTemplate(label: label, containers: [
-  containerTemplate(name: 'docker', image: 'docker', command: 'cat', ttyEnabled: true),
+    containerTemplate(name: 'docker', image: 'docker', command: 'cat', ttyEnabled: true),
 ],
 volumes: [
-  hostPathVolume(mountPath: '/var/run/docker.sock', hostPath: '/var/run/docker.sock')
+    hostPathVolume(mountPath: '/var/run/docker.sock', hostPath: '/var/run/docker.sock')
 ]) {
 
-node(label) {
+    node(label) {
         def projectId = 'prismatic-crow-429903-r1'
         def region = 'asia-southeast1'
         def repoName = 'devops'
@@ -25,9 +25,14 @@ node(label) {
                 }
             }
 
-            stage('Authenticate with Google Cloud') {
-                withCredentials([file(credentialsId: 'gcp-service-account-key', variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
-                    sh "gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS"
+            // ใช้ docker image ของ Google Cloud SDK สำหรับการตรวจสอบสิทธิ์
+            docker.image('google/cloud-sdk:latest').inside {
+                stage('Authenticate with Google Cloud') {
+                    withCredentials([file(credentialsId: 'gcp-service-account-key', variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
+                        sh '''#!/bin/bash
+                        gcloud auth activate-service-account --key-file="$GOOGLE_APPLICATION_CREDENTIALS"
+                        '''
+                    }
                 }
             }
 
