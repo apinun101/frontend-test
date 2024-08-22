@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-nextjs-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-nextjs-app
+  template:
+    metadata:
+      labels:
+        app: my-nextjs-app
+    spec:
+      containers:
+      - name: my-nextjs-app
+        image: asia-southeast1-docker.pkg.dev/prismatic-crow-429903-r1/devops-repo/my-nextjs-app:latest
+        ports:
+        - containerPort: 80
