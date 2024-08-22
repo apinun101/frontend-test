@@ -53,24 +53,16 @@ volumes: [
 
             stage('Deploy to GKE') {
                 container('kubectl') {
-                    withCredentials([file(credentialsId: 'gke-service-account-key', variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
-                        sh '''#!/bin/bash
-                        # Authenticate with Google Cloud
-                        gcloud auth activate-service-account --key-file="$GOOGLE_APPLICATION_CREDENTIALS"
+                    sh '''#!/bin/bash
+                    # Get credentials for the GKE cluster
+                    kubectl config use-context $(kubectl config get-contexts -o name | grep ${clusterName})
 
-                        # Set the project and compute zone
-                        gcloud config set project ${projectId}
-                        gcloud config set compute/zone ${clusterLocation}
-
-                        # Get credentials for the GKE cluster
-                        gcloud container clusters get-credentials ${clusterName}
-
-                        # Apply the Kubernetes deployment
-                        kubectl apply -f deployment.yaml
-                        '''
-                    }
-                }
+                    # Apply the Kubernetes deployment
+                    kubectl apply -f deployment.yaml
+                    '''
+               }
             }
+
         } finally {
             stage('Clean Workspace') {
                 cleanWs()
